@@ -1,0 +1,10 @@
+build/
+.classpath
+.project
+.settings/
+.idea/
+target/
+LICENSE.md
+.gradle/
+*.iml
+*.class
