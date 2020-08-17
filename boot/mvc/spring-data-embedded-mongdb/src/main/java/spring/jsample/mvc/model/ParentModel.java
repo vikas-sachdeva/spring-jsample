@@ -3,26 +3,38 @@ package spring.jsample.mvc.model;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public class ParentModel {
 
     @CreatedDate
-    protected Date createdAt;
+    protected LocalDateTime createdDateTime;
 
     @LastModifiedDate
-    protected Date lastModifiedDate;
+    protected LocalDateTime lastModifiedDateTime;
 
-    public Date getCreatedAt() {
-        return createdAt;
+    public ParentModel() {
     }
 
-    public Date getLastModifiedDate() {
-        return lastModifiedDate;
+    public ParentModel(LocalDateTime createdDateTime, LocalDateTime lastModifiedDateTime) {
+        this.createdDateTime = createdDateTime;
+        this.lastModifiedDateTime = lastModifiedDateTime;
     }
 
-    public void setLastModifiedDate(Date lastModifiedDate) {
-        this.lastModifiedDate = lastModifiedDate;
+    public LocalDateTime getCreatedDateTime() {
+        return createdDateTime;
+    }
+
+    public void setCreatedDateTime(LocalDateTime createdDateTime) {
+        this.createdDateTime = createdDateTime;
+    }
+
+    public LocalDateTime getLastModifiedDateTime() {
+        return lastModifiedDateTime;
+    }
+
+    public void setLastModifiedDateTime(LocalDateTime lastModifiedDateTime) {
+        this.lastModifiedDateTime = lastModifiedDateTime;
     }
 
 }

@@ -1,73 +1,80 @@
 package spring.jsample.mvc.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeAll;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataMongo;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import spring.jsample.mvc.dao.AppDao;
 import spring.jsample.mvc.model.Application;
 import spring.jsample.mvc.service.AppService;
 import spring.jsample.mvc.util.AppConstants;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
 @SpringJUnitWebConfig
 @AutoConfigureMockMvc
 @SpringBootTest
+@AutoConfigureDataMongo
 public class AppControllerTest {
 
-    @MockBean
+    @Autowired
     private AppService service;
 
     @Autowired
     private MockMvc mockMvc;
 
-    private static List<Application> applicationList;
+    @Autowired
+    private AppDao appDao;
 
-    @BeforeAll
-    private static void init() {
-        Application app1 = new Application("1", "Application-1", true);
-        Application app2 = new Application("2", "Application-2", false);
-        Application app3 = new Application("3", "Application-3", true);
-        applicationList = new ArrayList<>(Arrays.asList(app1, app2, app3));
+    private ObjectMapper mapper = new ObjectMapper();
+
+    @BeforeEach
+    public void initTest() {
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        appDao.save(new Application(LocalDateTime.now(), LocalDateTime.now(), "1", "Application-1", true));
+        appDao.save(new Application(LocalDateTime.now(), LocalDateTime.now(), "2", "Application-2", false));
+        appDao.save(new Application(LocalDateTime.now(), LocalDateTime.now(), "3", "Application-3", true));
     }
 
     @Test
     public void getAppsTest1() throws Exception {
-        Mockito.when(service.getApps()).thenReturn(applicationList);
-        ObjectMapper mapper = new ObjectMapper();
-        String expectedResponse = mapper.writeValueAsString(applicationList);
-        RequestBuilder requestBuilder = MockMvcRequestBuilders.get(AppConstants.URI.GET_APPS)
-                                                              .accept(MediaType.APPLICATION_JSON);
+        String expectedResponse = mapper.writeValueAsString(appDao.findAll());
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.get(AppConstants.URI.GET_APPS);
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isOk())
+               .andDo(MockMvcResultHandlers.print())
                .andExpect(MockMvcResultMatchers.content().json(expectedResponse, true));
+
     }
 
     @Test
     public void getAppsPageWiseTest1() throws Exception {
         int pageNumber = 0;
         int pageSize = 10;
-        Page<Application> page = Page.empty();
-        Mockito.when(service.getAppsPageWise(pageNumber, pageSize)).thenReturn(page);
-        ObjectMapper mapper = new ObjectMapper();
-        String expectedResponse = mapper.writeValueAsString(page);
+        String expectedResponse = mapper.writeValueAsString(appDao.findAll(PageRequest.of(pageNumber, pageSize)));
         RequestBuilder requestBuilder = MockMvcRequestBuilders.get(AppConstants.URI.GET_APPS_PAGE_WISE)
                                                               .param(AppConstants.REQ_PARAM.PAGE_NUMBER, String.valueOf(pageNumber))
-                                                              .param(AppConstants.REQ_PARAM.PAGE_SIZE, String.valueOf(pageSize))
-                                                              .accept(MediaType.APPLICATION_JSON);
+                                                              .param(AppConstants.REQ_PARAM.PAGE_SIZE, String.valueOf(pageSize));
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isOk())
+               .andDo(MockMvcResultHandlers.print())
                .andExpect(MockMvcResultMatchers.content().json(expectedResponse, true));
     }
 
@@ -75,17 +82,14 @@ public class AppControllerTest {
     public void getAppsByNamesPageWiseTest1() throws Exception {
         int pageNumber = 0;
         int pageSize = 10;
-        Page<Application> page = Page.empty();
-        List<String> appNames = Arrays.asList("app-1", "app-2");
-        Mockito.when(service.getAppsByNamesPageWise(appNames, pageNumber, pageSize)).thenReturn(page);
-        ObjectMapper mapper = new ObjectMapper();
-        String expectedResponse = mapper.writeValueAsString(page);
+        List<String> appNames = Arrays.asList(appDao.findAll().get(0).getName(), appDao.findAll().get(1).getName());
+        String expectedResponse = mapper.writeValueAsString(appDao.findByNameIn(appNames, PageRequest.of(pageNumber, pageSize)));
         RequestBuilder requestBuilder = MockMvcRequestBuilders.get(AppConstants.URI.GET_APPS_HAVING_NAMES_PAGE_WISE)
                                                               .param(AppConstants.REQ_PARAM.PAGE_NUMBER, String.valueOf(pageNumber))
                                                               .param(AppConstants.REQ_PARAM.PAGE_SIZE, String.valueOf(pageSize))
-                                                              .param(AppConstants.REQ_PARAM.NAMES_LIST, "app-1", "app-2")
-                                                              .accept(MediaType.APPLICATION_JSON);
+                                                              .param(AppConstants.REQ_PARAM.NAMES_LIST, String.join(",", appNames));
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isOk())
+               .andDo(MockMvcResultHandlers.print())
                .andExpect(MockMvcResultMatchers.content().json(expectedResponse, true));
     }
 
@@ -93,15 +97,16 @@ public class AppControllerTest {
     public void getRunningAppsPageWiseTest1() throws Exception {
         int pageNumber = 0;
         int pageSize = 10;
-        Page<Application> page = Page.empty();
-        Mockito.when(service.getRunningAppsPageWise(pageNumber, pageSize)).thenReturn(page);
-        ObjectMapper mapper = new ObjectMapper();
-        String expectedResponse = mapper.writeValueAsString(page);
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        Application application = new Application();
+        application.setRunning(true);
+        Example<Application> example = Example.of(application);
+        String expectedResponse = mapper.writeValueAsString(appDao.findAll(example, pageable));
         RequestBuilder requestBuilder = MockMvcRequestBuilders.get(AppConstants.URI.GET_RUNNING_APPS_PAGE_WISE)
                                                               .param(AppConstants.REQ_PARAM.PAGE_NUMBER, String.valueOf(pageNumber))
-                                                              .param(AppConstants.REQ_PARAM.PAGE_SIZE, String.valueOf(pageSize))
-                                                              .accept(MediaType.APPLICATION_JSON);
+                                                              .param(AppConstants.REQ_PARAM.PAGE_SIZE, String.valueOf(pageSize));
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isOk())
+               .andDo(MockMvcResultHandlers.print())
                .andExpect(MockMvcResultMatchers.content().json(expectedResponse, true));
     }
 
@@ -109,53 +114,52 @@ public class AppControllerTest {
     public void getRunningAppsByNamesPageWiseTest1() throws Exception {
         int pageNumber = 0;
         int pageSize = 10;
-        Page<Application> page = Page.empty();
-        List<String> appNames = Arrays.asList("app-1", "app-2");
-        Mockito.when(service.getRunningAppsByNamesPageWise(appNames, pageNumber, pageSize)).thenReturn(page);
-        ObjectMapper mapper = new ObjectMapper();
-        String expectedResponse = mapper.writeValueAsString(page);
+        List<String> appNames = Arrays.asList(appDao.findAll().get(0).getName(), appDao.findAll().get(1).getName());
+        String expectedResponse =
+                mapper.writeValueAsString(appDao.findByNameInAndRunning(appNames, true, PageRequest.of(pageNumber, pageSize)));
         RequestBuilder requestBuilder = MockMvcRequestBuilders.get(AppConstants.URI.GET_RUNNING_APPS_HAVING_NAMES_PAGE_WISE)
                                                               .param(AppConstants.REQ_PARAM.PAGE_NUMBER, String.valueOf(pageNumber))
                                                               .param(AppConstants.REQ_PARAM.PAGE_SIZE, String.valueOf(pageSize))
-                                                              .param(AppConstants.REQ_PARAM.NAMES_LIST, "app-1", "app-2")
-                                                              .accept(MediaType.APPLICATION_JSON);
+                                                              .param(AppConstants.REQ_PARAM.NAMES_LIST, String.join(",", appNames));
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isOk())
+               .andDo(MockMvcResultHandlers.print())
                .andExpect(MockMvcResultMatchers.content().json(expectedResponse, true));
     }
 
     @Test
     public void addAppTest1() throws Exception {
-        Application app4 = new Application("4", "Application-4", true);
-        Mockito.when(service.addApp(Mockito.any(Application.class))).thenReturn(app4);
-        ObjectMapper mapper = new ObjectMapper();
+        Application app4 = new Application("Application-4", true);
         String jsonApp = mapper.writeValueAsString(app4);
         RequestBuilder requestBuilder = MockMvcRequestBuilders.post(AppConstants.URI.ADD_APP)
-                                                              .accept(MediaType.APPLICATION_JSON)
                                                               .content(jsonApp)
                                                               .contentType(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isOk())
-               .andExpect(MockMvcResultMatchers.content().json(jsonApp, true));
+               .andExpect(MockMvcResultMatchers.jsonPath("$.id", Matchers.is(Matchers.notNullValue())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(app4.getName())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.running", Matchers.is(app4.getRunning())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.lastModifiedDateTime", Matchers.is(Matchers.notNullValue())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.createdDateTime", Matchers.is(Matchers.notNullValue())));
     }
 
     @Test
     public void updateAppTest1() throws Exception {
-        Application app5 = new Application("5", "Application-5", true);
-        Mockito.when(service.updateApp(Mockito.any(Application.class), Mockito.anyString())).thenReturn(app5);
-        ObjectMapper mapper = new ObjectMapper();
-        String jsonApp = mapper.writeValueAsString(app5);
-        RequestBuilder requestBuilder = MockMvcRequestBuilders.put(AppConstants.URI.UPDATE_APP, 5)
-                                                              .accept(MediaType.APPLICATION_JSON)
+        Application app3 = appDao.findById("3").orElseThrow();
+        app3.setName("Application-3-new");
+        String jsonApp = mapper.writeValueAsString(app3);
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.put(AppConstants.URI.UPDATE_APP, app3.getId())
                                                               .content(jsonApp)
                                                               .contentType(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isOk())
-               .andExpect(MockMvcResultMatchers.content().json(jsonApp, true));
+               .andExpect(MockMvcResultMatchers.jsonPath("$.id", Matchers.is(app3.getId())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(app3.getName())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.running", Matchers.is(app3.getRunning())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.lastModifiedDateTime", Matchers.is(Matchers.notNullValue())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.createdDateTime", Matchers.is(app3.getCreatedDateTime().toString())));
     }
 
     @Test
     public void deleteAppTest1() throws Exception {
-        Mockito.doNothing().when(service).deleteApp(Mockito.anyString());
-        RequestBuilder requestBuilder = MockMvcRequestBuilders.delete(AppConstants.URI.DELETE_APP, 5);
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.delete(AppConstants.URI.DELETE_APP, appDao.findAll().get(0).getId());
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isNoContent());
-
     }
 }

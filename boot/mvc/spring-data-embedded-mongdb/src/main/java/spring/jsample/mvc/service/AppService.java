@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import spring.jsample.mvc.dao.AppDao;
 import spring.jsample.mvc.exceptions.ApplicationNotFoundException;
 import spring.jsample.mvc.exceptions.ConcurrentModificationException;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class AppService {
 
     @Autowired
@@ -65,7 +67,7 @@ public class AppService {
     public Application updateApp(Application app, String id) {
         Optional<Application> dbApp = dao.findById(id);
         return dbApp.map((row) -> {
-            if (row.getLastModifiedDate().getTime() != app.getLastModifiedDate().getTime()) {
+            if (row.getLastModifiedDateTime().compareTo(app.getLastModifiedDateTime()) != 0) {
                 throw new ConcurrentModificationException("Application with id " + id + " is already modified.");
             }
             row.setName(app.getName());
