@@ -1,4 +1,4 @@
-package spring.jsample.mvc.exceptions;
+package spring.jsample.webflux.exceptions;
 
 public class ConcurrentModificationException extends RuntimeException {
 

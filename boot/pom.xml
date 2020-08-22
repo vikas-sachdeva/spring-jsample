@@ -14,6 +14,7 @@
     <version>1.0</version>
     <modules>
         <module>mvc</module>
+        <module>webflux</module>
     </modules>
     <packaging>pom</packaging>
 

@@ -1,6 +1,5 @@
 package spring.jsample.mvc.service;
 
-import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +8,9 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 import spring.jsample.mvc.dao.AppDao;
 import spring.jsample.mvc.model.Application;
 
@@ -42,27 +44,31 @@ public class AppServiceTest {
 
     @Test
     public void getAppsTest1() {
-        Mockito.when(dao.getApps()).thenReturn(applicationList);
-        AssertionsForInterfaceTypes.assertThat(service.getApps()).containsExactlyElementsOf(applicationList);
+        Mockito.when(dao.getApps()).thenReturn(Flux.fromIterable(applicationList));
+        StepVerifier.create(service.getApps())
+                    .expectNext(applicationList.get(0))
+                    .expectNext(applicationList.get(1))
+                    .expectNext(applicationList.get(2))
+                    .verifyComplete();
     }
 
     @Test
     public void addAppTest1() {
         Application app4 = new Application(4, "Application-4", "running");
-        Mockito.when(dao.addApp(app4)).thenReturn(app4);
-        AssertionsForInterfaceTypes.assertThat(service.addApp(app4)).isEqualTo(app4);
+        Mockito.when(dao.addApp(app4)).thenReturn(Mono.just(app4));
+        StepVerifier.create(service.addApp(app4)).expectNext(app4).verifyComplete();
     }
 
     @Test
     public void deleteAppTest1() {
-        Mockito.doNothing().when(dao).deleteApp(4);
-        service.deleteApp(4);
+        Mockito.when(dao.deleteApp(4)).thenReturn(Mono.empty());
+        StepVerifier.create(service.deleteApp(4)).verifyComplete();
     }
 
     @Test
     public void updateAppTest1() {
         Application app4 = new Application(4, "Application-4", "running");
-        Mockito.when(dao.updateApp(app4)).thenReturn(app4);
-        AssertionsForInterfaceTypes.assertThat(service.updateApp(app4)).isEqualTo(app4);
+        Mockito.when(dao.updateApp(app4)).thenReturn(Mono.just(app4));
+        StepVerifier.create(service.updateApp(app4)).expectNext(app4).verifyComplete();
     }
 }

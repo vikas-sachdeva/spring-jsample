@@ -7,7 +7,6 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataMongo;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Example;
@@ -25,14 +24,12 @@ import spring.jsample.mvc.model.Application;
 import spring.jsample.mvc.service.AppService;
 import spring.jsample.mvc.util.AppConstants;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
 @SpringJUnitWebConfig
 @AutoConfigureMockMvc
 @SpringBootTest
-@AutoConfigureDataMongo
 public class AppControllerTest {
 
     @Autowired
@@ -50,9 +47,9 @@ public class AppControllerTest {
     public void initTest() {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        appDao.save(new Application(LocalDateTime.now(), LocalDateTime.now(), "1", "Application-1", true));
-        appDao.save(new Application(LocalDateTime.now(), LocalDateTime.now(), "2", "Application-2", false));
-        appDao.save(new Application(LocalDateTime.now(), LocalDateTime.now(), "3", "Application-3", true));
+        appDao.insert(new Application("Application-1", true));
+        appDao.insert(new Application("Application-2", false));
+        appDao.insert(new Application("Application-3", true));
     }
 
     @Test
@@ -128,38 +125,44 @@ public class AppControllerTest {
 
     @Test
     public void addAppTest1() throws Exception {
-        Application app4 = new Application("Application-4", true);
-        String jsonApp = mapper.writeValueAsString(app4);
+        Application app = new Application("Application-4", true);
+        String jsonApp = mapper.writeValueAsString(app);
         RequestBuilder requestBuilder = MockMvcRequestBuilders.post(AppConstants.URI.ADD_APP)
                                                               .content(jsonApp)
                                                               .contentType(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isOk())
+               .andDo(MockMvcResultHandlers.print())
                .andExpect(MockMvcResultMatchers.jsonPath("$.id", Matchers.is(Matchers.notNullValue())))
-               .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(app4.getName())))
-               .andExpect(MockMvcResultMatchers.jsonPath("$.running", Matchers.is(app4.getRunning())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(app.getName())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.running", Matchers.is(app.getRunning())))
                .andExpect(MockMvcResultMatchers.jsonPath("$.lastModifiedDateTime", Matchers.is(Matchers.notNullValue())))
-               .andExpect(MockMvcResultMatchers.jsonPath("$.createdDateTime", Matchers.is(Matchers.notNullValue())));
+               .andExpect(MockMvcResultMatchers.jsonPath("$.createdDateTime", Matchers.is(Matchers.notNullValue())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.version", Matchers.is(Matchers.notNullValue())));
     }
 
     @Test
     public void updateAppTest1() throws Exception {
-        Application app3 = appDao.findById("3").orElseThrow();
-        app3.setName("Application-3-new");
-        String jsonApp = mapper.writeValueAsString(app3);
-        RequestBuilder requestBuilder = MockMvcRequestBuilders.put(AppConstants.URI.UPDATE_APP, app3.getId())
+        Application app = appDao.findAll().get(0);
+        app.setName("Application-new");
+        String jsonApp = mapper.writeValueAsString(app);
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.put(AppConstants.URI.UPDATE_APP, app.getId())
                                                               .content(jsonApp)
                                                               .contentType(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isOk())
-               .andExpect(MockMvcResultMatchers.jsonPath("$.id", Matchers.is(app3.getId())))
-               .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(app3.getName())))
-               .andExpect(MockMvcResultMatchers.jsonPath("$.running", Matchers.is(app3.getRunning())))
+               .andDo(MockMvcResultHandlers.print())
+               .andExpect(MockMvcResultMatchers.jsonPath("$.id", Matchers.is(app.getId())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.name", Matchers.is(app.getName())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.running", Matchers.is(app.getRunning())))
                .andExpect(MockMvcResultMatchers.jsonPath("$.lastModifiedDateTime", Matchers.is(Matchers.notNullValue())))
-               .andExpect(MockMvcResultMatchers.jsonPath("$.createdDateTime", Matchers.is(app3.getCreatedDateTime().toString())));
+               .andExpect(MockMvcResultMatchers.jsonPath("$.version", Matchers.is(Matchers.notNullValue())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.lastModifiedDateTime", Matchers.not(app.getLastModifiedDateTime().toString())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.version", Matchers.not(app.getVersion())))
+               .andExpect(MockMvcResultMatchers.jsonPath("$.createdDateTime", Matchers.is(app.getCreatedDateTime().toString())));
     }
 
     @Test
     public void deleteAppTest1() throws Exception {
         RequestBuilder requestBuilder = MockMvcRequestBuilders.delete(AppConstants.URI.DELETE_APP, appDao.findAll().get(0).getId());
-        mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isNoContent());
+        mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isNoContent()).andDo(MockMvcResultHandlers.print());
     }
 }

@@ -9,23 +9,24 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>mvc</artifactId>
+    <artifactId>webflux</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>rest-api-json</module>
-        <module>spring-data-embedded-mongdb</module>
+        <module>reactive-rest-api-json</module>
+        <module>spring-data-reactive-embedded-mongodb</module>
     </modules>
 
     <dependencies>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

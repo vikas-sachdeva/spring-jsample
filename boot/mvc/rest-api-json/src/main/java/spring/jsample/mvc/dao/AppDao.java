@@ -19,9 +19,7 @@ public class AppDao {
         Application app1 = new Application(1, "Application-1", "running");
         Application app2 = new Application(2, "Application-2", "stopped");
         Application app3 = new Application(3, "Application-3", "running");
-
         applicationList = new ArrayList<>(Arrays.asList(app1, app2, app3));
-
     }
 
     public List<Application> getApps() {
@@ -33,20 +31,21 @@ public class AppDao {
     }
 
     public void deleteApp(int id) {
-        applicationList.removeIf(a -> a.getId() == id);
+        applicationList.stream().filter(a -> a.getId() == id).findFirst().map(a -> applicationList.remove(a)).orElseThrow();
     }
 
-    public int addApp(Application app) {
+    public Application addApp(Application app) {
         int maxId = applicationList.stream().max(Comparator.comparingInt(Application::getId)).map(Application::getId).orElseThrow();
         app.setId(maxId + 1);
         applicationList.add(app);
-        return app.getId();
+        return app;
     }
 
-    public void updateApp(Application app) {
-        applicationList.stream().filter(a -> a.getId() == app.getId()).findFirst().ifPresent(a -> {
+    public Application updateApp(Application app) {
+        return applicationList.stream().filter(a -> a.getId() == app.getId()).findFirst().map(a -> {
             a.setName(app.getName());
             a.setStatus(app.getStatus());
-        });
+            return a;
+        }).orElseThrow();
     }
 }

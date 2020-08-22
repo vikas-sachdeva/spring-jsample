@@ -17,9 +17,11 @@ public class AppDaoTest {
 
     @Test
     public void addAppTest1() {
-        Application app4 = new Application(4, "Application-4", "running");
+        Application app = new Application(1, "Application-4", "running");
         int maxId = dao.getApps().stream().max(Comparator.comparingInt(Application::getId)).map(Application::getId).orElseThrow();
-        AssertionsForInterfaceTypes.assertThat(dao.addApp(app4)).isEqualTo(maxId + 1);
+        AssertionsForInterfaceTypes.assertThat(dao.addApp(app).getId()).isEqualTo(maxId + 1);
+        AssertionsForInterfaceTypes.assertThat(dao.addApp(app).getStatus()).isEqualTo(app.getStatus());
+        AssertionsForInterfaceTypes.assertThat(dao.addApp(app).getName()).isEqualTo(app.getName());
     }
 
     @Test
@@ -31,9 +33,13 @@ public class AppDaoTest {
 
     @Test
     public void updateAppTest1() {
-        int id = 1;
-        Application app1 = new Application(id, "Application-14", "running");
-        dao.updateApp(app1);
-        AssertionsForInterfaceTypes.assertThat(dao.getAppById(id)).isEqualTo(app1);
+        Application app = new Application(1, "Application-14", "running");
+        AssertionsForInterfaceTypes.assertThat(dao.updateApp(app)).isEqualTo(app);
+    }
+
+    @Test
+    public void updateAppTest2() {
+        Application app = new Application(5, "Application-14", "running");
+        AssertionsForInterfaceTypes.assertThatExceptionOfType(NoSuchElementException.class).isThrownBy(() -> dao.updateApp(app));
     }
 }

@@ -96,6 +96,5 @@ public class AppControllerTest {
         RequestBuilder requestBuilder = MockMvcRequestBuilders.delete(AppConstants.URI.DELETE_APP, 5);
 
         mockMvc.perform(requestBuilder).andExpect(MockMvcResultMatchers.status().isNoContent());
-
     }
 }
