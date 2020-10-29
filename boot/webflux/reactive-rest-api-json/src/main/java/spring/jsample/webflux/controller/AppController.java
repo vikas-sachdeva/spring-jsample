@@ -29,7 +29,7 @@ public class AppController {
 
     @GetMapping(value = {AppConstants.URI.GET_APP})
     @ResponseBody
-    public ResponseEntity<?> getApp(@PathVariable String id) {
+    public ResponseEntity<?> getApp(@PathVariable int id) {
         return new ResponseEntity<>(service.getApp(id), HttpStatus.OK);
     }
 
@@ -41,13 +41,15 @@ public class AppController {
 
     @PutMapping(value = {AppConstants.URI.UPDATE_APP})
     @ResponseBody
-    public ResponseEntity<?> updateApp(@RequestBody Application app, @PathVariable String id) {
-        return new ResponseEntity<>(service.updateApp(app, id), HttpStatus.OK);
+    public ResponseEntity<?> updateApp(@RequestBody Application app, @PathVariable int id) {
+        app.setId(id);
+        return new ResponseEntity<>(service.updateApp(app), HttpStatus.OK);
     }
 
     @DeleteMapping(value = {AppConstants.URI.DELETE_APP})
     @ResponseBody
-    public ResponseEntity<?> deleteApp(@PathVariable String id) {
-        return new ResponseEntity<>(service.deleteApp(id), HttpStatus.NO_CONTENT);
+    public ResponseEntity<?> deleteApp(@PathVariable int id) {
+        service.deleteApp(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

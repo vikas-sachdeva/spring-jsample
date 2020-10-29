@@ -18,14 +18,17 @@ public class AppService {
         return dao.findAll();
     }
 
+    public Mono<Application> getApp(String id) {
+        return dao.findById(id).switchIfEmpty(error(id));
+    }
+
     public Mono<Application> addApp(Application app) {
-        Mono<Application> savedApp = dao.save(app);
-        return savedApp;
+        return dao.save(app);
     }
 
     public Mono<Void> deleteApp(String id) {
         return dao.findById(id)
-                  .switchIfEmpty(Mono.error(new ApplicationNotFoundException("Application with id " + id + " not found")))
+                  .switchIfEmpty(error(id))
                   .flatMap(x -> dao.deleteById(id));
 
     }
@@ -35,7 +38,10 @@ public class AppService {
             a.setName(app.getName());
             a.setRunning(app.getRunning());
             return dao.save(a);
+        }).switchIfEmpty(error(id));
+    }
 
-        }).switchIfEmpty(Mono.error((new ApplicationNotFoundException("Application with id " + id + " not found"))));
+    private Mono<Application> error(String id) {
+        return Mono.error((new ApplicationNotFoundException("Application with id " + id + " not found")));
     }
 }

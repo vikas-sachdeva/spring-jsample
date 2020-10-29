@@ -14,6 +14,7 @@
     <modules>
         <module>reactive-rest-api-json</module>
         <module>spring-data-reactive-embedded-mongodb</module>
+        <module>cloud</module>
     </modules>
 
     <dependencies>

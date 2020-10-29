@@ -17,9 +17,6 @@ public class ParentModel {
     @Version
     protected Long version;
 
-    public ParentModel() {
-    }
-
     public LocalDateTime getCreatedDateTime() {
         return createdDateTime;
     }

@@ -1,61 +1,93 @@
-//package spring.jsample.webflux.controller;
-//
-//import org.junit.jupiter.api.Test;
-//import org.mockito.Mockito;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-//import org.springframework.boot.test.context.SpringBootTest;
-//import org.springframework.boot.test.mock.mockito.MockBean;
-//import org.springframework.test.web.reactive.server.WebTestClient;
-//import reactor.core.publisher.Flux;
-//import reactor.core.publisher.Mono;
-//import spring.jsample.webflux.model.Application;
-//import spring.jsample.webflux.service.AppService;
-//import spring.jsample.webflux.util.AppConstants;
-//
-//import java.util.Arrays;
-//
-//@SpringBootTest
-//@AutoConfigureWebTestClient
-//public class AppControllerTest {
-//
-//    @MockBean
-//    private AppService service;
-//
-//    @Autowired
-//    private WebTestClient webTestClient;
-//
-//    @Test
-//    public void getAppsTest1() throws Exception {
-//        Application app1 = new Application("1", "Application-1", true);
-//        Application app2 = new Application("2", "Application-2", false);
-//        Application app3 = new Application("3", "Application-3", true);
-//        Mockito.when(service.getApps()).thenReturn(Flux.just(app1, app2, app3));
-//        webTestClient.get().uri(AppConstants.URI.GET_APPS).exchange().expectStatus().isOk()
-//                     .expectBodyList(Application.class).isEqualTo(Arrays.asList(app1, app2, app3));
-//    }
-//
-//    @Test
-//    public void addAppTest1() throws Exception {
-//        Application app4 = new Application("4", "Application-4", true);
-//        Mockito.when(service.addApp(Mockito.any(Application.class))).thenReturn(Mono.just(app4));
-//        webTestClient.post().uri(AppConstants.URI.ADD_APP).syncBody(app4).exchange().expectStatus().isOk()
-//                     .expectBody(Application.class).isEqualTo(app4);
-//
-//    }
-//
-//    @Test
-//    public void updateAppTest1() throws Exception {
-//        Application app5 = new Application("5", "Application-5", true);
-//        Mockito.when(service.updateApp(Mockito.any(Application.class), Mockito.anyString()))
-//               .thenReturn(Mono.just(app5));
-//        webTestClient.put().uri(AppConstants.URI.UPDATE_APP, 5).syncBody(app5).exchange().expectStatus().isOk()
-//                     .expectBody(Application.class).isEqualTo(app5);
-//    }
-//
-//    @Test
-//    public void deleteAppTest1() throws Exception {
-//        Mockito.when(service.deleteApp(Mockito.anyString())).thenReturn(Mono.empty());
-//        webTestClient.delete().uri(AppConstants.URI.DELETE_APP, 5).exchange().expectStatus().isNoContent();
-//    }
-//}
+package spring.jsample.webflux.controller;
+
+import org.assertj.core.api.AssertionsForInterfaceTypes;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import spring.jsample.webflux.dao.AppDao;
+import spring.jsample.webflux.model.Application;
+import spring.jsample.webflux.util.AppConstants;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+@SpringBootTest
+@AutoConfigureWebTestClient
+public class AppControllerTest {
+
+    @Autowired
+    private AppDao appDao;
+
+    @Autowired
+    private WebTestClient webTestClient;
+
+    @BeforeEach
+    public void init() {
+        appDao.deleteAll().block();
+        List<Application> apps = new ArrayList<>();
+        apps.add(new Application("Application-1", true));
+        apps.add(new Application("Application-2", false));
+        apps.add(new Application("Application-3", true));
+        appDao.insert(apps).blockLast();
+    }
+
+    @Test
+    public void getAppsTest1() {
+        List<Application> apps = Objects.requireNonNull(appDao.findAll().collect(Collectors.toList()).block());
+        webTestClient.get().uri(AppConstants.URI.GET_APPS).exchange().expectStatus().isOk()
+                     .expectBodyList(Application.class).isEqualTo(apps);
+    }
+
+    @Test
+    public void getAppTest1() {
+        Application app = Objects.requireNonNull(appDao.findAll().blockLast());
+        webTestClient.get().uri(AppConstants.URI.GET_APP, app.getId()).exchange().expectStatus().isOk()
+                     .expectBody(Application.class).isEqualTo(app);
+    }
+
+    @Test
+    public void addAppTest1() {
+        Application app = new Application("Application-4", true);
+        webTestClient.post().uri(AppConstants.URI.ADD_APP).bodyValue(app).exchange().expectStatus().isOk()
+                     .expectBody(Application.class).consumeWith(r -> {
+            Application application = r.getResponseBody();
+            AssertionsForInterfaceTypes.assertThat(application).isNotNull();
+            AssertionsForInterfaceTypes.assertThat(application.getName()).isEqualTo(app.getName());
+            AssertionsForInterfaceTypes.assertThat(application.getRunning()).isEqualTo(app.getRunning());
+            AssertionsForInterfaceTypes.assertThat(application.getVersion()).isEqualTo(0L);
+            AssertionsForInterfaceTypes.assertThat(application)
+                                       .extracting(Application::getId, Application::getLastModifiedDateTime,
+                                                   Application::getCreatedDateTime)
+                                       .doesNotContainNull();
+        });
+    }
+
+    @Test
+    public void updateAppTest1() {
+        Application app = Objects.requireNonNull(appDao.findAll().blockFirst());
+        app.setName("new app new");
+        app.setRunning(false);
+        webTestClient.put().uri(AppConstants.URI.UPDATE_APP, app.getId()).bodyValue(app).exchange().expectStatus().isOk()
+                     .expectBody(Application.class).consumeWith(r -> {
+            Application application = r.getResponseBody();
+            AssertionsForInterfaceTypes.assertThat(application)
+                                       .isNotNull()
+                                       .isEqualToIgnoringGivenFields(app, "lastModifiedDateTime", "version");
+            AssertionsForInterfaceTypes.assertThat(application.getVersion()).isEqualTo(1L);
+            AssertionsForInterfaceTypes.assertThat(application.getLastModifiedDateTime())
+                                       .isNotNull()
+                                       .isNotEqualTo(app.getLastModifiedDateTime());
+        });
+    }
+
+    @Test
+    public void deleteAppTest1() {
+        String id = Objects.requireNonNull(appDao.findAll().blockFirst()).getId();
+        webTestClient.delete().uri(AppConstants.URI.DELETE_APP, id).exchange().expectStatus().isNoContent();
+    }
+}
