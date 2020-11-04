@@ -58,6 +58,11 @@ public class AppServiceTest {
     }
 
     @Test
+    public void getAppTest2() {
+        StepVerifier.create(service.getApp("4")).verifyError(ApplicationNotFoundException.class);
+    }
+
+    @Test
     public void addAppTest1() {
         Application app = new Application("Application - 4", true);
         StepVerifier.create(service.addApp(app)).expectSubscription().consumeNextWith(a -> {
@@ -101,4 +106,3 @@ public class AppServiceTest {
         StepVerifier.create(service.updateApp(app, "4")).verifyError(ApplicationNotFoundException.class);
     }
 }
-

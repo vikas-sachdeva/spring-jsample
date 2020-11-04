@@ -51,9 +51,14 @@ public class AppControllerTest {
     }
 
     @Test
+    public void getAppTest2() {
+        webTestClient.get().uri(AppConstants.URI.GET_APP, "1").exchange().expectStatus().isNotFound();
+    }
+
+    @Test
     public void addAppTest1() {
         Application app = new Application("Application-4", true);
-        webTestClient.post().uri(AppConstants.URI.ADD_APP).bodyValue(app).exchange().expectStatus().isOk()
+        webTestClient.post().uri(AppConstants.URI.ADD_APP).bodyValue(app).exchange().expectStatus().isCreated()
                      .expectBody(Application.class).consumeWith(r -> {
             Application application = r.getResponseBody();
             AssertionsForInterfaceTypes.assertThat(application).isNotNull();
@@ -86,8 +91,18 @@ public class AppControllerTest {
     }
 
     @Test
+    public void updateAppTest2() {
+        webTestClient.put().uri(AppConstants.URI.UPDATE_APP, "1").bodyValue(new Application()).exchange().expectStatus().isNotFound();
+    }
+
+    @Test
     public void deleteAppTest1() {
         String id = Objects.requireNonNull(appDao.findAll().blockFirst()).getId();
         webTestClient.delete().uri(AppConstants.URI.DELETE_APP, id).exchange().expectStatus().isNoContent();
+    }
+
+    @Test
+    public void deleteAppTest2() {
+        webTestClient.delete().uri(AppConstants.URI.DELETE_APP, "1").exchange().expectStatus().isNotFound();
     }
 }

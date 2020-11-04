@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
+import spring.jsample.webflux.exceptions.ApplicationNotFoundException;
 import spring.jsample.webflux.model.Application;
 import spring.jsample.webflux.service.AppService;
 import spring.jsample.webflux.util.AppConstants;
@@ -29,25 +31,31 @@ public class AppController {
 
     @GetMapping(value = {AppConstants.URI.GET_APP})
     @ResponseBody
-    public ResponseEntity<?> getApp(@PathVariable String id) {
-        return new ResponseEntity<>(service.getApp(id), HttpStatus.OK);
+    public Mono<ResponseEntity<Application>> getApp(@PathVariable String id) {
+        return service.getApp(id)
+                      .map(ResponseEntity::ok)
+                      .onErrorReturn(ApplicationNotFoundException.class, ResponseEntity.notFound().build());
     }
 
     @PostMapping(value = {AppConstants.URI.ADD_APP})
     @ResponseBody
     public ResponseEntity<?> addApp(@RequestBody Application app) {
-        return new ResponseEntity<>(service.addApp(app), HttpStatus.OK);
+        return new ResponseEntity<>(service.addApp(app), HttpStatus.CREATED);
     }
 
     @PutMapping(value = {AppConstants.URI.UPDATE_APP})
     @ResponseBody
-    public ResponseEntity<?> updateApp(@RequestBody Application app, @PathVariable String id) {
-        return new ResponseEntity<>(service.updateApp(app, id), HttpStatus.OK);
+    public Mono<ResponseEntity<Application>> updateApp(@RequestBody Application app, @PathVariable String id) {
+        return service.updateApp(app, id)
+                      .map(ResponseEntity::ok)
+                      .onErrorReturn(ApplicationNotFoundException.class, ResponseEntity.notFound().build());
     }
 
     @DeleteMapping(value = {AppConstants.URI.DELETE_APP})
     @ResponseBody
-    public ResponseEntity<?> deleteApp(@PathVariable String id) {
-        return new ResponseEntity<>(service.deleteApp(id), HttpStatus.NO_CONTENT);
+    public Mono<ResponseEntity<Void>> deleteApp(@PathVariable String id) {
+        return service.deleteApp(id)
+                      .thenReturn(ResponseEntity.noContent().<Void>build())
+                      .onErrorReturn(ApplicationNotFoundException.class, ResponseEntity.notFound().build());
     }
 }
