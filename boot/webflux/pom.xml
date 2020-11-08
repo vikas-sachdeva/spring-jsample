@@ -15,6 +15,7 @@
         <module>reactive-rest-api-json</module>
         <module>spring-data-reactive-embedded-mongodb</module>
         <module>cloud</module>
+        <module>server-sent-events</module>
     </modules>
 
     <dependencies>
