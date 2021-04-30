@@ -11,6 +11,7 @@ import spring.jsample.mvc.dao.AppDao;
 import spring.jsample.mvc.exceptions.ApplicationNotFoundException;
 import spring.jsample.mvc.model.Application;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class AppServiceTest {
         int pageSize = 2;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         AssertionsForInterfaceTypes.assertThat(service.getAppsPageWise(pageNumber, pageSize))
-                                   .containsExactlyElementsOf(appDao.findAll(pageable));
+                .containsExactlyElementsOf(appDao.findAll(pageable));
     }
 
     @Test
@@ -63,7 +64,7 @@ public class AppServiceTest {
         List<String> appNames = Arrays.asList(appDao.findAll().get(0).getName(), appDao.findAll().get(1).getName());
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         AssertionsForInterfaceTypes.assertThat(service.getAppsByNamesPageWise(appNames, pageNumber, pageSize))
-                                   .containsExactlyElementsOf(appDao.findByNameIn(appNames, pageable));
+                .containsExactlyElementsOf(appDao.findByNameIn(appNames, pageable));
     }
 
     @Test
@@ -72,7 +73,7 @@ public class AppServiceTest {
         int pageSize = 10;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         AssertionsForInterfaceTypes.assertThat(service.getRunningAppsPageWise(pageNumber, pageSize))
-                                   .containsExactlyElementsOf(appDao.findAll(pageable).filter(Application::getRunning).toList());
+                .containsExactlyElementsOf(appDao.findAll(pageable).filter(Application::getRunning).toList());
     }
 
     @Test
@@ -82,17 +83,15 @@ public class AppServiceTest {
         List<String> appNames = Arrays.asList(appDao.findAll().get(0).getName(), appDao.findAll().get(1).getName());
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         AssertionsForInterfaceTypes.assertThat(service.getRunningAppsByNamesPageWise(appNames, pageNumber, pageSize))
-                                   .containsExactlyElementsOf(appDao.findByNameInAndRunning(appNames, true, pageable));
+                .containsExactlyElementsOf(appDao.findByNameInAndRunning(appNames, true, pageable));
     }
 
     @Test
     public void addAppTest1() {
         Application app = new Application("Application-4", true);
         AssertionsForInterfaceTypes.assertThat(service.addApp(app))
-                                   .isEqualToComparingOnlyGivenFields(app, "name", "running")
-                                   .extracting(Application::getCreatedDateTime, Application::getLastModifiedDateTime,
-                                               Application::getVersion, Application::getId, Application::getName, Application::getRunning)
-                                   .doesNotContainNull();
+                .hasNoNullFieldsOrProperties()
+                .usingRecursiveComparison().ignoringFields("id").ignoringFieldsOfTypes(LocalDateTime.class, Long.class).isEqualTo(app);
     }
 
     @Test
@@ -109,19 +108,19 @@ public class AppServiceTest {
 
     @Test
     public void updateAppTest1() {
-        Application app = appDao.findAll().get(0);
-        app.setName("Application-4");
-        AssertionsForInterfaceTypes.assertThat(service.updateApp(app, app.getId()))
-                                   .isEqualToIgnoringGivenFields(app, "lastModifiedDateTime", "version")
-                                   .extracting(Application::getLastModifiedDateTime, Application::getVersion)
-                                   .doesNotContainNull().doesNotContain(app.getVersion(), app.getLastModifiedDateTime());
-
+        Application expected = appDao.findAll().get(0);
+        expected.setName("Application-4");
+        Application actual = service.updateApp(expected, expected.getId());
+        AssertionsForInterfaceTypes.assertThat(actual).hasNoNullFieldsOrProperties();
+        AssertionsForInterfaceTypes.assertThat(actual).usingRecursiveComparison().ignoringFields("lastModifiedDateTime", "version").isEqualTo(expected);
+        AssertionsForInterfaceTypes.assertThat(actual.getVersion()).isEqualTo(expected.getVersion() + 1);
+        AssertionsForInterfaceTypes.assertThat(actual.getLastModifiedDateTime()).isAfter(expected.getLastModifiedDateTime());
     }
 
     @Test
     public void updateAppTest2() {
         Application app = appDao.findAll().get(0);
         AssertionsForInterfaceTypes.assertThatExceptionOfType(ApplicationNotFoundException.class)
-                                   .isThrownBy(() -> service.updateApp(app, "5"));
+                .isThrownBy(() -> service.updateApp(app, "5"));
     }
 }

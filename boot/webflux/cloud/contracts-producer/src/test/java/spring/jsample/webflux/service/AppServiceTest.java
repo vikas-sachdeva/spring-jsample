@@ -38,23 +38,23 @@ public class AppServiceTest {
     public void getAppsTest1() {
         List<Application> apps = Objects.requireNonNull(dao.findAll().collect(Collectors.toList()).block());
         StepVerifier.create(service.getApps())
-                    .expectSubscription()
-                    .recordWith(ArrayList::new)
-                    .expectNextCount(apps.size())
-                    .consumeRecordedWith(l -> {
-                        AssertionsForInterfaceTypes.assertThat(l).isNotNull().hasSize(apps.size());
-                        AssertionsForInterfaceTypes.assertThat(l).containsExactlyElementsOf(apps);
-                    })
-                    .verifyComplete();
+                .expectSubscription()
+                .recordWith(ArrayList::new)
+                .expectNextCount(apps.size())
+                .consumeRecordedWith(l -> {
+                    AssertionsForInterfaceTypes.assertThat(l).isNotNull().hasSize(apps.size());
+                    AssertionsForInterfaceTypes.assertThat(l).containsExactlyElementsOf(apps);
+                })
+                .verifyComplete();
     }
 
     @Test
     public void getAppTest1() {
         Application app = Objects.requireNonNull(dao.findAll().elementAt(0).block());
         StepVerifier.create(service.getApp(app.getId()))
-                    .expectSubscription()
-                    .consumeNextWith(a -> AssertionsForInterfaceTypes.assertThat(a).isEqualTo(app))
-                    .verifyComplete();
+                .expectSubscription()
+                .consumeNextWith(a -> AssertionsForInterfaceTypes.assertThat(a).isEqualTo(app))
+                .verifyComplete();
     }
 
     @Test
@@ -89,7 +89,7 @@ public class AppServiceTest {
         app.setRunning(false);
         StepVerifier.create(service.updateApp(app, app.getId())).expectSubscription().consumeNextWith(a -> {
             AssertionsForInterfaceTypes.assertThat(a).isNotNull();
-            AssertionsForInterfaceTypes.assertThat(a).isEqualToIgnoringGivenFields(app, "lastModifiedDateTime", "version");
+            AssertionsForInterfaceTypes.assertThat(a).usingRecursiveComparison().ignoringFields("lastModifiedDateTime", "version").isEqualTo(app);
             AssertionsForInterfaceTypes.assertThat(a.getVersion()).isEqualTo(app.getVersion() + 1);
             AssertionsForInterfaceTypes.assertThat(a.getLastModifiedDateTime()).isNotNull().isNotEqualTo(app.getLastModifiedDateTime());
         }).verifyComplete();

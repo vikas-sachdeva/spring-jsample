@@ -40,14 +40,14 @@ public class AppControllerTest {
     public void getAppsTest1() {
         List<Application> apps = Objects.requireNonNull(appDao.findAll().collect(Collectors.toList()).block());
         webTestClient.get().uri(AppConstants.URI.GET_APPS).exchange().expectStatus().isOk()
-                     .expectBodyList(Application.class).isEqualTo(apps);
+                .expectBodyList(Application.class).isEqualTo(apps);
     }
 
     @Test
     public void getAppTest1() {
         Application app = Objects.requireNonNull(appDao.findAll().blockLast());
         webTestClient.get().uri(AppConstants.URI.GET_APP, app.getId()).exchange().expectStatus().isOk()
-                     .expectBody(Application.class).isEqualTo(app);
+                .expectBody(Application.class).isEqualTo(app);
     }
 
     @Test
@@ -59,16 +59,16 @@ public class AppControllerTest {
     public void addAppTest1() {
         Application app = new Application("Application-4", true);
         webTestClient.post().uri(AppConstants.URI.ADD_APP).bodyValue(app).exchange().expectStatus().isCreated()
-                     .expectBody(Application.class).consumeWith(r -> {
+                .expectBody(Application.class).consumeWith(r -> {
             Application application = r.getResponseBody();
             AssertionsForInterfaceTypes.assertThat(application).isNotNull();
             AssertionsForInterfaceTypes.assertThat(application.getName()).isEqualTo(app.getName());
             AssertionsForInterfaceTypes.assertThat(application.getRunning()).isEqualTo(app.getRunning());
             AssertionsForInterfaceTypes.assertThat(application.getVersion()).isEqualTo(0L);
             AssertionsForInterfaceTypes.assertThat(application)
-                                       .extracting(Application::getId, Application::getLastModifiedDateTime,
-                                                   Application::getCreatedDateTime)
-                                       .doesNotContainNull();
+                    .extracting(Application::getId, Application::getLastModifiedDateTime,
+                            Application::getCreatedDateTime)
+                    .doesNotContainNull();
         });
     }
 
@@ -78,15 +78,12 @@ public class AppControllerTest {
         app.setName("new app new");
         app.setRunning(false);
         webTestClient.put().uri(AppConstants.URI.UPDATE_APP, app.getId()).bodyValue(app).exchange().expectStatus().isOk()
-                     .expectBody(Application.class).consumeWith(r -> {
+                .expectBody(Application.class).consumeWith(r -> {
             Application application = r.getResponseBody();
-            AssertionsForInterfaceTypes.assertThat(application)
-                                       .isNotNull()
-                                       .isEqualToIgnoringGivenFields(app, "lastModifiedDateTime", "version");
+            AssertionsForInterfaceTypes.assertThat(application).hasNoNullFieldsOrProperties().usingRecursiveComparison()
+                    .ignoringFields("lastModifiedDateTime", "version").isEqualTo(app);
             AssertionsForInterfaceTypes.assertThat(application.getVersion()).isEqualTo(1L);
-            AssertionsForInterfaceTypes.assertThat(application.getLastModifiedDateTime())
-                                       .isNotNull()
-                                       .isNotEqualTo(app.getLastModifiedDateTime());
+            AssertionsForInterfaceTypes.assertThat(application.getLastModifiedDateTime()).isNotEqualTo(app.getLastModifiedDateTime());
         });
     }
 

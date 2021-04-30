@@ -39,7 +39,7 @@ public class AppServiceTest {
 
     @BeforeEach
     private void initTest() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
