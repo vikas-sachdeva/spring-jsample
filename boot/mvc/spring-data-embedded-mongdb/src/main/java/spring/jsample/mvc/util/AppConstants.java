@@ -1,4 +1,4 @@
-package spring.jsample.webflux.util;
+package spring.jsample.mvc.util;
 
 public class AppConstants {
 

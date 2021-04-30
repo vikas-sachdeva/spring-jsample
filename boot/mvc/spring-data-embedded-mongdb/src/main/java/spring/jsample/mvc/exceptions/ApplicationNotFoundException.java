@@ -1,4 +1,4 @@
-package spring.jsample.webflux.exceptions;
+package spring.jsample.mvc.exceptions;
 
 public class ApplicationNotFoundException extends RuntimeException {
 

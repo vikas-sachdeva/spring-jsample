@@ -1,4 +1,4 @@
-package spring.jsample.webflux.model;
+package spring.jsample.mvc.model;
 
 import java.util.Objects;
 import java.util.StringJoiner;

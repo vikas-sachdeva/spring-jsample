@@ -1,4 +1,4 @@
-package spring.jsample.webflux.model;
+package spring.jsample.mvc.model;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -16,9 +16,6 @@ public class ParentModel {
 
     @Version
     protected Long version;
-
-    public ParentModel() {
-    }
 
     public LocalDateTime getCreatedDateTime() {
         return createdDateTime;

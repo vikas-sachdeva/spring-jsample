@@ -1,4 +1,4 @@
-package spring.jsample.webflux;
+package spring.jsample.mvc;
 
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;

@@ -1,4 +1,4 @@
-package spring.jsample.webflux.controller;
+package spring.jsample.mvc.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import spring.jsample.webflux.model.Application;
-import spring.jsample.webflux.service.AppService;
-import spring.jsample.webflux.util.AppConstants;
+import spring.jsample.mvc.model.Application;
+import spring.jsample.mvc.service.AppService;
+import spring.jsample.mvc.util.AppConstants;
 
 @RestController
 public class AppController {
