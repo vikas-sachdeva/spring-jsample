@@ -19,7 +19,7 @@ public class AppEventController {
         this.appService = appService;
     }
 
-    @GetMapping(value = "/app/status/{id}", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+    @GetMapping(value = "/app/status/{id}", produces = MediaType.APPLICATION_NDJSON_VALUE)
     public Flux<Application> subscribeNotifications(@PathVariable int id) {
         return Flux.interval(Duration.ofSeconds(1)).map(a -> appService.getAppStatus(id));
     }
