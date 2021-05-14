@@ -11,10 +11,10 @@ public class AppService {
     private Random random = new Random();
 
     public Application getAppStatus(int id) {
-        return new Application(id, "app-1", getStatus(id));
+        return new Application(id, "app-1", getStatus());
     }
 
-    private String getStatus(int id) {
+    private String getStatus() {
         int randomNumber = random.nextInt();
         if (randomNumber % 2 == 0) {
             return "running";
