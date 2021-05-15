@@ -17,6 +17,7 @@
         <module>cloud</module>
         <module>server-sent-events</module>
         <module>functional-reactive-rest-api-json</module>
+        <module>functional-server-sent-events</module>
     </modules>
 
     <dependencies>
